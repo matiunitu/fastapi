@@ -1,18 +1,22 @@
-from fastapi import APIRouter
-from controllers.dependencias_controller import DependenciasController
-from models.dependencias_model import Dependencias
+from fastapi import APIRouter, HTTPException
+from controllers.dependencias_controller import *
+from models.dependencias_model import Dependencia
 
 router = APIRouter()
+
 nuevo_dependencia = DependenciasController()
 
 @router.post("/create_dependencia")
-async def create_dependencia(dependencia: Dependencias):
-    return nuevo_dependencia.create_dependencia(dependencia)
+async def create_dependencia(dependencia: Dependencia):
+    rpta = nuevo_dependencia.create_dependencia(dependencia)
+    return rpta
 
-@router.get("/get_dependencia/{id_dependencia}")
+@router.get("/get_dependencia/{id_dependencia}", response_model=Dependencia)
 async def get_dependencia(id_dependencia: int):
-    return nuevo_dependencia.get_dependencia(id_dependencia)
+    rpta = nuevo_dependencia.get_dependencia(id_dependencia)
+    return rpta
 
 @router.get("/get_dependencias/")
 async def get_dependencias():
-    return nuevo_dependencia.get_dependencias()
+    rpta = nuevo_dependencia.get_dependencias()
+    return rpta
