@@ -1,9 +1,7 @@
-import psycopg2
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from config.db_config import get_db_connection
 from models.pqrs_model import Pqrs
-
 
 class PqrsController:
     def create_pqrs(self, pqrs: Pqrs):
@@ -26,39 +24,11 @@ class PqrsController:
                     pqrs.id_prioridad,
                 ),
             )
-            id_pqrs = cur.fetchone()[0]
+            id_pqrs = cur.fetchone()['id_pqrs']
             conn.commit()
             return {"id_pqrs": id_pqrs, "resultado": "PQRS creado"}
-        except psycopg2.IntegrityError as err:
+        except Exception as err:
             conn.rollback()
-            raise HTTPException(status_code=400, detail=f"Integrity error: {str(err)}")
-        except psycopg2.Error as err:
-            conn.rollback()
-            raise HTTPException(status_code=500, detail=str(err))
-        finally:
-            conn.close()
-
-    def get_pqrs(self, id_pqrs: int):
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            cur.execute("SELECT id_pqrs, radicado, descripcion, fecha_creacion, fecha_limite, id_usuario, id_dependencia, id_tipospqrs, id_estado, id_prioridad FROM pqrs WHERE id_pqrs=%s", (id_pqrs,))
-            r = cur.fetchone()
-            if not r:
-                raise HTTPException(status_code=404, detail="PQRS no encontrado")
-            return jsonable_encoder({
-                "id_pqrs": r[0],
-                "radicado": r[1],
-                "descripcion": r[2],
-                "fecha_creacion": r[3],
-                "fecha_limite": r[4],
-                "id_usuario": r[5],
-                "id_dependencia": r[6],
-                "id_tipospqrs": r[7],
-                "id_estado": r[8],
-                "id_prioridad": r[9],
-            })
-        except psycopg2.Error as err:
             raise HTTPException(status_code=500, detail=str(err))
         finally:
             conn.close()
@@ -67,24 +37,24 @@ class PqrsController:
         try:
             conn = get_db_connection()
             cur = conn.cursor()
-            cur.execute("SELECT id_pqrs, radicado, descripcion, fecha_creacion, fecha_limite, id_usuario, id_dependencia, id_tipospqrs, id_estado, id_prioridad FROM pqrs")
+            cur.execute("SELECT * FROM pqrs")
             rows = cur.fetchall()
-            return jsonable_encoder([
-                {
-                    "id_pqrs": r[0],
-                    "radicado": r[1],
-                    "descripcion": r[2],
-                    "fecha_creacion": r[3],
-                    "fecha_limite": r[4],
-                    "id_usuario": r[5],
-                    "id_dependencia": r[6],
-                    "id_tipospqrs": r[7],
-                    "id_estado": r[8],
-                    "id_prioridad": r[9],
-                }
-                for r in rows
-            ])
-        except psycopg2.Error as err:
+            return rows
+        except Exception as err:
+            raise HTTPException(status_code=500, detail=str(err))
+        finally:
+            conn.close()
+
+    def get_pqrs(self, id_pqrs: int):
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM pqrs WHERE id_pqrs=%s", (id_pqrs,))
+            r = cur.fetchone()
+            if not r:
+                raise HTTPException(status_code=404, detail="PQRS no encontrado")
+            return r
+        except Exception as err:
             raise HTTPException(status_code=500, detail=str(err))
         finally:
             conn.close()
@@ -94,7 +64,9 @@ class PqrsController:
             conn = get_db_connection()
             cur = conn.cursor()
             cur.execute(
-                "UPDATE pqrs SET radicado=%s, descripcion=%s, fecha_creacion=%s, fecha_limite=%s, id_usuario=%s, id_dependencia=%s, id_tipospqrs=%s, id_estado=%s, id_prioridad=%s WHERE id_pqrs=%s",
+                """UPDATE pqrs SET radicado=%s, descripcion=%s, fecha_creacion=%s, fecha_limite=%s,
+                   id_usuario=%s, id_dependencia=%s, id_tipospqrs=%s, id_estado=%s, id_prioridad=%s
+                   WHERE id_pqrs=%s""",
                 (
                     pqrs.radicado,
                     pqrs.descripcion,
@@ -105,18 +77,15 @@ class PqrsController:
                     pqrs.id_tipospqrs,
                     pqrs.id_estado,
                     pqrs.id_prioridad,
-                    id_pqrs,
-                ),
+                    id_pqrs
+                )
             )
             if cur.rowcount == 0:
                 conn.rollback()
                 raise HTTPException(status_code=404, detail="PQRS no encontrado")
             conn.commit()
             return {"resultado": "PQRS actualizado"}
-        except psycopg2.IntegrityError as err:
-            conn.rollback()
-            raise HTTPException(status_code=400, detail=f"Integrity error: {str(err)}")
-        except psycopg2.Error as err:
+        except Exception as err:
             conn.rollback()
             raise HTTPException(status_code=500, detail=str(err))
         finally:
@@ -132,10 +101,7 @@ class PqrsController:
                 raise HTTPException(status_code=404, detail="PQRS no encontrado")
             conn.commit()
             return {"resultado": "PQRS eliminado"}
-        except psycopg2.IntegrityError as err:
-            conn.rollback()
-            raise HTTPException(status_code=400, detail=f"Integrity error: {str(err)}")
-        except psycopg2.Error as err:
+        except Exception as err:
             conn.rollback()
             raise HTTPException(status_code=500, detail=str(err))
         finally:
