@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Importar rutas
+from routes.auth_routes import router as auth_router
 from routes.usuarios_routes import router as usuarios_router
 from routes.roles_routes import router as roles_router
 from routes.dependencias_routes import router as dependencias_router
@@ -18,20 +19,47 @@ from routes.historial_estados_routes import router as historial_estados_router
 # Crear app FastAPI
 app = FastAPI(
     title="API de Gestión de Usuarios Universitarios",
-    description="API para gestionar usuarios, roles, dependencias e historial con PostgreSQL",
-    version="1.0.0",
+    description="""
+## API PQRS Universitaria
+
+### Autenticación JWT
+Usa `/auth/login` para obtener un token temporal (60 minutos).
+
+**Credenciales demo:**
+| Campo    | Valor  |
+|----------|--------|
+| username | nelson |
+| password | 1234   |
+| rol      | admin  |
+
+### Roles disponibles
+| Rol        | Permisos                                  |
+|------------|-------------------------------------------|
+| admin      | CRUD completo + usuarios + reportes       |
+| docente    | PQRS + respuestas + perfil                |
+| estudiante | PQRS propias + perfil                     |
+
+### Estado de registros
+Todas las tablas principales usan `estado` (SMALLINT):
+- **1** = activo
+- **0** = inactivo/eliminado (soft-delete)
+
+Las tablas también registran `created_at` y `updated_at` automáticamente.
+    """,
+    version="2.0.0",
 )
 
-# Middleware CORS para permitir que cualquier frontend pueda consumir la API
+# Middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # Permite todos los orígenes
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],          # Permite todos los métodos HTTP
-    allow_headers=["*"],          # Permite todos los headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Incluir todas las rutas
+# ─── Rutas ────────────────────────────────────────────────────────────────────
+app.include_router(auth_router)          # /auth/*
 app.include_router(usuarios_router)
 app.include_router(roles_router)
 app.include_router(dependencias_router)
@@ -45,7 +73,12 @@ app.include_router(respuestas_router)
 app.include_router(historial_router)
 app.include_router(historial_estados_router)
 
-# Ruta raíz de prueba
+
 @app.get("/", summary="Saludo base")
 async def root():
-    return {"message": "API de Gestión de Usuarios Universitarios activa"}
+    return {
+        "message": "API PQRS v2.0 activa",
+        "docs": "/docs",
+        "auth": "POST /auth/login → { username, password }",
+        "seed": "POST /auth/seed → crea usuario demo nelson/1234/admin",
+    }

@@ -8,6 +8,6 @@ def get_db_connection():
         user="neondb_owner",
         password="npg_E0rTLVPGDin3",
         dbname="pqrsdb",
-        sslmode="require",            # <--- IMPORTANTE
-        cursor_factory=RealDictCursor  # Para que los SELECT devuelvan diccionarios
+        sslmode="require",           
+        cursor_factory=RealDictCursor 
     )
