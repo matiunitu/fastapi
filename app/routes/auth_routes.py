@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
-from controllers.auth_controller import AuthController
-from models.auth_model import LoginRequest, TokenResponse
-from config.auth_deps import get_current_user
+from ..controllers.auth_controller import AuthController
+from ..models.auth_model import LoginRequest, TokenResponse
+from ..config.auth_deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["autenticación"])
 controller = AuthController()

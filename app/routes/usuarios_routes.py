@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from controllers.usuarios_controller import UsuariosController
-from models.usuario_model import Usuario
+from ..controllers.usuarios_controller import UsuariosController
+from ..models.usuario_model import Usuario
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 controller = UsuariosController()

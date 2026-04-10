@@ -1,8 +1,8 @@
 import psycopg2
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-from config.db_config import get_db_connection
-from models.tipospqrs_model import Tipospqrs
+from ..config.db_config import get_db_connection
+from ..models.tipospqrs_model import Tipospqrs
 
 
 class TipospqrsController:

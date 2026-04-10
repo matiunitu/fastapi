@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from controllers.historial_estados_controller import HistorialEstadosController
-from models.historial_estados_model import HistorialEstados
+from ..controllers.historial_estados_controller import HistorialEstadosController
+from ..models.historial_estados_model import HistorialEstados
 
 router = APIRouter(prefix="/historial_estados", tags=["historial_estados"])
 controller = HistorialEstadosController()

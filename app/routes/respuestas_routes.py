@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from controllers.respuestas_controller import RespuestasController
-from models.respuesta_model import Respuesta
+from ..controllers.respuestas_controller import RespuestasController
+from ..models.respuesta_model import Respuesta
 
 router = APIRouter(prefix="/respuestas", tags=["respuestas"])
 controller = RespuestasController()

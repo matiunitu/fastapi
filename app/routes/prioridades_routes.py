@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from controllers.prioridades_controller import PrioridadesController
-from models.prioridad_model import Prioridad
+from ..controllers.prioridades_controller import PrioridadesController
+from ..models.prioridad_model import Prioridad
 
 router = APIRouter(prefix="/prioridades", tags=["prioridades"])
 controller = PrioridadesController()

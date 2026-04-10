@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from controllers.tipospqrs_controller import TipospqrsController
-from models.tipospqrs_model import Tipospqrs
+from ..controllers.tipospqrs_controller import TipospqrsController
+from ..models.tipospqrs_model import Tipospqrs
 
 router = APIRouter(prefix="/tipospqrs", tags=["tipospqrs"])
 controller = TipospqrsController()

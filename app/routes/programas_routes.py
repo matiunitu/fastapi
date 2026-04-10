@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from controllers.programas_controller import ProgramasController
-from models.programa_model import Programa
+from ..controllers.programas_controller import ProgramasController
+from ..models.programa_model import Programa
 
 router = APIRouter(prefix="/programas", tags=["programas"])
 controller = ProgramasController()

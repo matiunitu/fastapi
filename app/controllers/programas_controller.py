@@ -1,8 +1,8 @@
 import psycopg2
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-from config.db_config import get_db_connection
-from models.programa_model import Programa
+from ..config.db_config import get_db_connection
+from ..models.programa_model import Programa
 
 
 class ProgramasController:

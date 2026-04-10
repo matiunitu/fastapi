@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from controllers.dependencias_controller import DependenciasController
-from models.dependencia_model import Dependencia
+from ..controllers.dependencias_controller import DependenciasController
+from ..models.dependencia_model import Dependencia
 
 router = APIRouter(prefix="/dependencias", tags=["dependencias"])
 controller = DependenciasController()

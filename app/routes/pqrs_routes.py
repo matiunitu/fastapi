@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from controllers.pqrs_controller import PqrsController
-from models.pqrs_model import Pqrs
+from ..controllers.pqrs_controller import PqrsController
+from ..models.pqrs_model import Pqrs
 
 router = APIRouter(prefix="/pqrs", tags=["pqrs"])
 controller = PqrsController()

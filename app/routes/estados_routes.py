@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from controllers.estados_controller import EstadosController
-from models.estado_model import Estado
+from ..controllers.estados_controller import EstadosController
+from ..models.estado_model import Estado
 
 router = APIRouter(prefix="/estados", tags=["estados"])
 controller = EstadosController()

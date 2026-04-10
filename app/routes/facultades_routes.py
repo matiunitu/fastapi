@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from controllers.facultades_controller import FacultadesController
-from models.facultad_model import Facultad
+from ..controllers.facultades_controller import FacultadesController
+from ..models.facultad_model import Facultad
 
 router = APIRouter(prefix="/facultades", tags=["facultades"])
 controller = FacultadesController()

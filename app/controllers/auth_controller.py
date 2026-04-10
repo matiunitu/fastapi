@@ -1,6 +1,6 @@
-from config.db_config import get_db_connection
-from config.jwt_config import verify_password, hash_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from models.auth_model import LoginRequest, TokenResponse
+from ..config.db_config import get_db_connection
+from ..config.jwt_config import verify_password, hash_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from ..models.auth_model import LoginRequest, TokenResponse
 from fastapi import HTTPException, status
 
 

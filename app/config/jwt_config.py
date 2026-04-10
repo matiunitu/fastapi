@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import hashlib
 
 # ─── Configuración JWT ─────────────────────────────────────────────────────────
 SECRET_KEY = "supersecretkey_pqrs_2024_$#@!"   # Cambiar en producción
@@ -9,16 +9,15 @@ ALGORITHM  = "HS256"
 # Token expira en 60 minutos (temporal / sesión corta)
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-# ─── Hash de contraseñas ───────────────────────────────────────────────────────
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    """Verifica contraseña usando SHA256"""
+    return hashlib.sha256(plain.encode()).hexdigest() == hashed
 
 
 def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+    """Hash de contraseña usando SHA256"""
+    return hashlib.sha256(plain.encode()).hexdigest()
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
