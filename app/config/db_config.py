@@ -1,5 +1,6 @@
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import DictCursor
+import os
 
 def get_db_connection():
     return psycopg2.connect(
@@ -8,6 +9,6 @@ def get_db_connection():
         user="neondb_owner",
         password="npg_E0rTLVPGDin3",
         dbname="pqrsdb",
-        sslmode="require",           
-        cursor_factory=RealDictCursor 
+        sslmode="require",
+        cursor_factory=DictCursor
     )

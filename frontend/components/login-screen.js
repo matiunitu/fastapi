@@ -42,8 +42,8 @@ class LoginScreen extends HTMLElement {
 
           <div class="demo-hint">
             <strong>🔑 Credenciales demo</strong>
-            <span>Usuario: <b>nelson</b> &nbsp;|&nbsp; Contraseña: <b>1234</b></span>
-            <span style="color:var(--text-muted);font-size:0.75rem">Rol: admin — Token válido 60 min</span>
+            <span>Admin: <b>nelson</b> / <b>1234</b> &nbsp;|&nbsp; Docente: <b>maria</b> / <b>1234</b> &nbsp;|&nbsp; Estudiante: <b>juan</b> / <b>1234</b></span>
+            <span style="color:var(--text-muted);font-size:0.75rem">Token válido 60 min — se elimina al cerrar la pestaña</span>
           </div>
         </div>
       </div>

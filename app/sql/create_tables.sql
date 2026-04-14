@@ -14,12 +14,22 @@ INSERT INTO roles (nombre_rol) VALUES
 ON CONFLICT (nombre_rol) DO NOTHING;
 
 -- =====================================
+-- FACULTADES
+-- =====================================
+CREATE TABLE IF NOT EXISTS facultades (
+    id_facultad SERIAL PRIMARY KEY,
+    nombre_facultad VARCHAR(100) UNIQUE NOT NULL,
+    descripcion TEXT
+);
+
+-- =====================================
 -- PROGRAMAS
 -- =====================================
 CREATE TABLE IF NOT EXISTS programas (
     id_programa SERIAL PRIMARY KEY,
     nombre_programa VARCHAR(100) UNIQUE NOT NULL,
-    descripcion TEXT
+    descripcion TEXT,
+    id_facultad INTEGER REFERENCES facultades(id_facultad)
 );
 
 -- =====================================
@@ -133,6 +143,7 @@ CREATE INDEX IF NOT EXISTS idx_seguimiento_pqrs ON seguimiento_pqrs(id_pqrs);
 -- =====================================
 -- VISTA USUARIOS (SIN IDs)
 -- =====================================
+DROP VIEW IF EXISTS vista_usuarios CASCADE;
 CREATE OR REPLACE VIEW vista_usuarios AS
 SELECT 
     u.id_usuario,
@@ -158,6 +169,7 @@ LEFT JOIN programas p ON u.id_programa = p.id_programa;
 -- =====================================
 -- VISTA PQRS COMPLETA
 -- =====================================
+DROP VIEW IF EXISTS vista_pqrs CASCADE;
 CREATE OR REPLACE VIEW vista_pqrs AS
 SELECT 
     pq.id_pqrs,
@@ -188,6 +200,7 @@ LEFT JOIN prioridades pr ON pq.id_prioridad = pr.id_prioridad;
 -- =====================================
 -- VISTA SEGUIMIENTO
 -- =====================================
+DROP VIEW IF EXISTS vista_seguimiento CASCADE;
 CREATE OR REPLACE VIEW vista_seguimiento AS
 SELECT 
     s.id_seguimiento,
@@ -206,6 +219,7 @@ LEFT JOIN roles r ON u.id_rol = r.id_rol;
 -- =====================================
 -- VISTA HISTORIAL
 -- =====================================
+DROP VIEW IF EXISTS vista_historial CASCADE;
 CREATE OR REPLACE VIEW vista_historial AS
 SELECT 
     h.id_historial,

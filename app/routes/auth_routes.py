@@ -18,9 +18,18 @@ async def login(data: LoginRequest):
     return controller.login(data)
 
 
-@router.post("/seed", summary="Crear usuario demo nelson/admin/1234 (solo dev)")
+@router.post("/seed", summary="Seed completo: catálogos + 3 usuarios demo (solo dev)")
 async def seed():
-    """Crea el usuario de prueba en la base de datos si no existe."""
+    """
+    Siembra todos los datos base del sistema:
+    - Roles (ADMIN, DOCENTE, ESTUDIANTE)
+    - Facultad y Programa demo
+    - Dependencias (5)
+    - Tipos PQRS (Petición, Queja, Reclamo, Sugerencia)
+    - Estados (Pendiente, En revisión, Resuelto, Rechazado)
+    - Prioridades (Baja, Media, Alta)
+    - Usuarios: nelson/1234 (ADMIN), maria/1234 (DOCENTE), juan/1234 (ESTUDIANTE)
+    """
     return controller.seed_demo_user()
 
 

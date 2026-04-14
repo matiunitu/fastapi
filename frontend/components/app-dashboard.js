@@ -17,6 +17,7 @@ const ROLE_CONFIG = {
       { id: 'pqrs',          label: 'PQRS',               icon: '📋' },
       { id: 'roles',         label: 'Roles & Permisos',   icon: '🔑' },
       { id: 'reportes',      label: 'Reportes',           icon: '📈' },
+      { id: 'powerbi',       label: 'Dashboard BI',       icon: '📊' },
     ],
   },
   docente: {
@@ -81,7 +82,7 @@ class AppDashboard extends HTMLElement {
   }
 
   render() {
-    const rol    = this._user?.rol ?? 'estudiante';
+    const rol    = (this._user?.rol ?? 'estudiante').toLowerCase();
     const cfg    = ROLE_CONFIG[rol] ?? ROLE_CONFIG.estudiante;
     const initials = (this._user?.nombre ?? '?').slice(0,2).toUpperCase();
 
@@ -157,16 +158,17 @@ class AppDashboard extends HTMLElement {
       case 'pqrs':        this._pagePQRS(target);       break;
       case 'roles':       this._pageRoles(target);      break;
       case 'reportes':    this._pageReportes(target);   break;
+      case 'powerbi':     this._pagePowerBI(target);    break;
       case 'nueva-pqrs':  this._pageNuevaPQRS(target);  break;
       case 'mis-pqrs':    this._pageMisPQRS(target);    break;
       case 'perfil':      this._pagePerfil(target);     break;
-      default:            target.innerHTML = '<p>Sección no disponible</p>';
+      default:            target.innerHTML = '<empty-state icon="🚧" title="Sección no encontrada" message="Esta sección aún no está disponible."></empty-state>';
     }
   }
 
   // ── DASHBOARD ──────────────────────────────────────────────────────────────
   async _pageDashboard(el) {
-    const rol = this._user?.rol;
+    const rol = (this._user?.rol ?? 'estudiante').toLowerCase();
     const cfg = ROLE_CONFIG[rol] ?? ROLE_CONFIG.estudiante;
 
     el.innerHTML = `
@@ -235,12 +237,17 @@ class AppDashboard extends HTMLElement {
       const rows = await apiCall('/usuarios/');
       const table = document.createElement('data-table');
       table.columns = [
-        { key: 'id_usuario', label: 'ID' },
         { key: 'nombre',     label: 'Nombre' },
+        { key: 'tipo_documento', label: 'Tipo Doc.' },
+        { key: 'documento',  label: 'Documento' },
         { key: 'correo',     label: 'Correo' },
         { key: 'telefono',   label: 'Teléfono' },
-        { key: 'estado',     label: 'Estado', render: v => `<span class="badge ${v==1?'badge-success':'badge-danger'}">${v==1?'Activo':'Inactivo'}</span>` },
-        { key: 'created_at', label: 'Creado', render: v => v ? new Date(v).toLocaleDateString('es-CO') : '—' },
+        { key: 'rol',        label: 'Rol',
+          render: v => `<role-badge role="${(v??'').toLowerCase()}"></role-badge>` },
+        { key: 'activo',     label: 'Estado',
+          render: v => `<status-badge active="${v===true||v==='true'||v==1?'true':'false'}"></status-badge>` },
+        { key: 'created_at', label: 'Creado',
+          render: v => v ? new Date(v).toLocaleDateString('es-CO') : '—' },
       ];
       table.actions = [
         { label: '✏️ Editar',   cls: 'btn-ghost', onClick: row => this._formUsuario(el, row) },
@@ -319,27 +326,63 @@ class AppDashboard extends HTMLElement {
   // ── PQRS (Admin) ────────────────────────────────────────────────────────────
   async _pagePQRS(el) {
     el.innerHTML = `
-      <div class="page-header"><h2>📋 Gestión de PQRS</h2></div>
+      <div class="page-header">
+        <h2>📋 Gestión de PQRS</h2>
+        <p>Administra, cambia estado y activa/inactiva cualquier solicitud.</p>
+      </div>
       <div class="card">
         <div id="pqrsWrap"><p style="text-align:center;padding:24px;color:var(--text-muted)">Cargando…</p></div>
       </div>
+      <modal-dialog id="pqrsModal"></modal-dialog>
     `;
+    await this._loadPqrsTable(el);
+  }
+
+  async _loadPqrsTable(el) {
     const wrap = el.querySelector('#pqrsWrap');
     try {
-      const rows = await apiCall('/pqrs/');
+      const [rows, estados] = await Promise.all([
+        apiCall('/pqrs/'),
+        apiCall('/estados/').catch(() => []),
+      ]);
+
+      // Build estado map id→nombre and deduplicate
+      const estadoMap = {};
+      const uniqueEstados = [];
+      const seenEstados = new Set();
+      (estados || []).forEach(e => { 
+        estadoMap[e.id_estado] = e.nombre_estado; 
+        if (!seenEstados.has(e.nombre_estado) && e.nombre_estado) {
+          uniqueEstados.push(e);
+          seenEstados.add(e.nombre_estado);
+        }
+      });
+      // Save uniqueEstados on el for modal usage
+      el._uniqueEstados = uniqueEstados;
+
       const table = document.createElement('data-table');
       table.columns = [
-        { key: 'id_pqrs',      label: 'ID' },
-        { key: 'radicado',     label: 'Radicado' },
-        { key: 'id_usuario',   label: 'Usuario ID' },
-        { key: 'id_tipospqrs', label: 'Tipo' },
-        { key: 'id_estado',    label: 'Estado BD',
-          render: v => `<span class="badge badge-info">ID ${v??'—'}</span>` },
-        { key: 'updated_at',   label: 'Actualizado',
+        { key: 'radicado',      label: 'Radicado' },
+        { key: 'descripcion',   label: 'Descripción',
+          render: v => `<span title="${v??''}">${(v??'').slice(0,45)}${(v??'').length>45?'…':''}</span>` },
+        { key: 'id_estado',     label: 'Estado PQRS',
+          render: v => {
+            const nombre = estadoMap[v] ?? (v ? `ID ${v}` : 'Sin estado');
+            return `<status-badge status="${nombre}"></status-badge>`;
+          }},
+        { key: 'estado',        label: 'Activo',
+          render: v => `<status-badge active="${v==1||v===true?'true':'false'}"></status-badge>` },
+        { key: 'fecha_creacion',label: 'Fecha',
+          render: v => v ? new Date(v).toLocaleDateString('es-CO') : '—' },
+        { key: 'updated_at',    label: 'Actualizado',
           render: v => v ? new Date(v).toLocaleString('es-CO') : '—' },
       ];
       table.actions = [
-        { label: '👁 Ver', cls: 'btn-ghost', onClick: row => window.toast?.show(`PQRS #${row.id_pqrs}: ${row.radicado}`, 'info') },
+        { 
+          label: '⚙️ Gestionar',  
+          cls: 'btn-primary btn-sm',  
+          onClick: row => this._modalEditPqrs(el, row, el._uniqueEstados) 
+        }
       ];
       table.rows     = rows;
       table.emptyMsg = 'Sin PQRS registradas';
@@ -349,6 +392,79 @@ class AppDashboard extends HTMLElement {
       wrap.innerHTML = `<p style="color:var(--danger);padding:20px">${e.message}</p>`;
     }
   }
+
+  async _modalEditPqrs(el, row, estados = []) {
+    const modal = el.querySelector('#pqrsModal');
+    if (!modal) return;
+
+    const estadoOpts = estados.map(e =>
+      `<option value="${e.id_estado}" ${e.id_estado == row.id_estado ? 'selected' : ''}>${e.nombre_estado}</option>`
+    ).join('');
+
+    modal.setTitle(`✏️ Editar PQRS — ${row.radicado}`);
+    modal.setContent(`
+      <div class="form-group">
+        <label>Radicado</label>
+        <input id="m-radicado" value="${row.radicado ?? ''}" />
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea id="m-desc" rows="3">${row.descripcion ?? ''}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Estado del PQRS</label>
+        <select id="m-estado">
+          ${estadoOpts || '<option value="">Sin estados</option>'}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Activo en el sistema</label>
+        <select id="m-activo">
+          <option value="1" ${row.estado==1||row.estado===true?'selected':''}>Sí — Activo</option>
+          <option value="0" ${row.estado==0||row.estado===false?'selected':''}>No — Inactivo</option>
+        </select>
+      </div>
+    `);
+    modal.setActions([
+      { label: 'Guardar cambios', cls: 'btn-primary', onClick: async () => {
+        const cont    = modal.querySelector('#modalContent') ?? modal;
+        const radicado  = cont.querySelector('#m-radicado').value;
+        const desc      = cont.querySelector('#m-desc').value;
+        const id_estado = parseInt(cont.querySelector('#m-estado').value) || row.id_estado;
+        const activo    = parseInt(cont.querySelector('#m-activo').value);
+
+        try {
+          await apiCall(`/pqrs/${row.id_pqrs}`, 'PUT', {
+            radicado,
+            descripcion: desc,
+            id_estado,
+            id_dependencia: row.id_dependencia,
+            id_tipospqrs:   row.id_tipospqrs,
+            id_prioridad:   row.id_prioridad,
+          });
+          // Patch estado activo separately
+          await apiCall(`/pqrs/${row.id_pqrs}/estado`, 'PATCH', { estado: activo });
+          modal.close();
+          window.toast?.show('PQRS actualizado correctamente', 'success');
+          await this._loadPqrsTable(el);
+        } catch(err) { window.toast?.show(err.message, 'error'); }
+      }},
+      { label: 'Cancelar', cls: 'btn-ghost', onClick: () => modal.close() },
+    ]);
+    modal.open();
+  }
+
+  async _toggleActivoPqrs(row, el) {
+    const nuevoEstado = (row.estado==1||row.estado===true) ? 0 : 1;
+    const msg = nuevoEstado === 1 ? 'activar' : 'desactivar';
+    if (!confirm(`¿Deseas ${msg} este PQRS?`)) return;
+    try {
+      await apiCall(`/pqrs/${row.id_pqrs}/estado`, 'PATCH', { estado: nuevoEstado });
+      window.toast?.show(`PQRS ${nuevoEstado===1?'activado':'desactivado'}`, 'success');
+      await this._loadPqrsTable(el);
+    } catch(e) { window.toast?.show(e.message, 'error'); }
+  }
+
 
   // ── ROLES & PERMISOS ────────────────────────────────────────────────────────
   _pageRoles(el) {
@@ -402,30 +518,32 @@ class AppDashboard extends HTMLElement {
     el.innerHTML = `
       <div class="page-header">
         <h2>📈 Reportes</h2>
-        <p>Vista de datos para conectar a Power BI</p>
+        <p>Datos exportables y conexión a Power BI</p>
       </div>
-      <div class="card">
-        <div class="card-header"><h3>Conexión Power BI</h3></div>
-        <p style="margin-bottom:16px">Conecta Power BI directamente a la base de datos Neon (PostgreSQL) en la nube:</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px">
-            <h4 style="margin-bottom:8px">⚡ Opción 1: Conector PostgreSQL</h4>
-            <p style="font-size:0.82rem">En Power BI → Obtener datos → PostgreSQL</p>
-            <pre style="margin-top:8px;font-size:0.75rem;background:var(--bg-base);padding:10px;border-radius:6px;border:1px solid var(--border)">Servidor: ep-fragrant-glitter-aig2qu6i-pooler.c-4.us-east-1.aws.neon.tech
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header"><h3>🔗 Cadena de conexión PostgreSQL</h3></div>
+        <p style="margin-bottom:12px;font-size:0.875rem">Usa estos datos en Power BI Desktop → Obtener datos → PostgreSQL:</p>
+        <pre style="font-size:0.78rem;background:var(--bg-base);padding:14px;border-radius:6px;border:1px solid var(--border);color:#a5f3fc">Servidor: ep-fragrant-glitter-aig2qu6i-pooler.c-4.us-east-1.aws.neon.tech
 Puerto:   5432
 BD:       pqrsdb
-Usuario:  neondb_owner</pre>
-          </div>
-          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px">
-            <h4 style="margin-bottom:8px">🌐 Opción 2: API REST</h4>
-            <p style="font-size:0.82rem">En Power BI → Web → URL de la API</p>
-            <pre style="margin-top:8px;font-size:0.75rem;background:var(--bg-base);padding:10px;border-radius:6px;border:1px solid var(--border)">GET http://localhost:8000/pqrs/
-GET http://localhost:8000/usuarios/
-Authorization: Bearer &lt;token&gt;</pre>
-          </div>
-        </div>
+Usuario:  neondb_owner
+SSL:      require
+
+Vistas recomendadas:
+  - vista_pqrs
+  - vista_usuarios
+  - vista_seguimiento
+  - vista_historial</pre>
+        <p style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">👆 Para ver el tablero interactivo ve a <strong>Dashboard BI</strong> en el menú.</p>
       </div>
     `;
+  }
+
+  // ── POWER BI DASHBOARD ──────────────────────────────────────────────────────
+  _pagePowerBI(el) {
+    el.innerHTML = '';
+    const pbi = document.createElement('powerbi-dashboard');
+    el.appendChild(pbi);
   }
 
   // ── NUEVA PQRS ──────────────────────────────────────────────────────────────
@@ -495,13 +613,17 @@ Authorization: Bearer &lt;token&gt;</pre>
       const rows = all.filter(p => p.id_usuario === this._user?.id_usuario);
       const table = document.createElement('data-table');
       table.columns = [
-        { key: 'id_pqrs',  label: 'ID' },
-        { key: 'radicado', label: 'Radicado' },
-        { key: 'id_estado',label: 'Estado BD', render: v => `<span class="badge badge-info">ID ${v??'—'}</span>` },
-        { key: 'id_prioridad', label: 'Prioridad',
-          render: v => v==3?'<span class="badge badge-danger">Alta</span>':v==2?'<span class="badge badge-warning">Media</span>':'<span class="badge badge-success">Baja</span>' },
+        { key: 'radicado',       label: 'Radicado' },
+        { key: 'descripcion',    label: 'Descripción',
+          render: v => `<span title="${v}">${(v??'').slice(0,45)}${(v??'').length>45?'…':''}</span>` },
+        { key: 'estado',         label: 'Estado',
+          render: (v, row) => `<status-badge status="${row.nombre_estado??v??'—'}"></status-badge>` },
+        { key: 'id_prioridad',   label: 'Prioridad',
+          render: v => v==3?'<span class="badge badge-danger">🔴 Alta</span>':v==2?'<span class="badge badge-warning">🟡 Media</span>':'<span class="badge badge-success">🟢 Baja</span>' },
         { key: 'fecha_creacion', label: 'Fecha',
           render: v => v ? new Date(v).toLocaleDateString('es-CO') : '—' },
+        { key: 'updated_at',     label: 'Actualizado',
+          render: v => v ? new Date(v).toLocaleString('es-CO') : '—' },
       ];
       table.rows     = rows;
       table.emptyMsg = 'No tienes PQRS registradas';
@@ -514,7 +636,7 @@ Authorization: Bearer &lt;token&gt;</pre>
 
   // ── PERFIL ──────────────────────────────────────────────────────────────────
   _pagePerfil(el) {
-    const rol = this._user?.rol ?? 'estudiante';
+    const rol = (this._user?.rol ?? 'estudiante').toLowerCase();
     const cfg = ROLE_CONFIG[rol] ?? ROLE_CONFIG.estudiante;
     const payload = this._decodeToken();
 

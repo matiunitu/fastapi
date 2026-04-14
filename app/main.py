@@ -80,5 +80,5 @@ async def root():
         "message": "API PQRS v2.0 activa",
         "docs": "/docs",
         "auth": "POST /auth/login → { username, password }",
-        "seed": "POST /auth/seed → crea usuario demo nelson/1234/admin",
+        "seed": "POST /auth/seed → siembra catálogos + 3 usuarios demo",
     }

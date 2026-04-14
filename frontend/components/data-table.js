@@ -39,9 +39,12 @@ class DataTable extends HTMLElement {
             return `<td>${val}</td>`;
           }).join('');
 
-          const actBtns = this._actions.map((act, i) =>
-            `<button class="btn btn-sm ${act.cls ?? 'btn-ghost'}" data-row="${encodeURIComponent(JSON.stringify(row))}" data-act="${i}">${act.label}</button>`
-          ).join('');
+          const actBtns = this._actions.map((act, i) => {
+            const label = typeof act.label === 'function' ? act.label(row) : act.label;
+            const cls   = typeof act.cls   === 'function' ? act.cls(row)   : (act.cls ?? 'btn-ghost');
+            const rowIdx = this._rows.indexOf(row);
+            return `<button class="btn btn-sm ${cls}" data-idx="${rowIdx}" data-act="${i}">${label}</button>`;
+          }).join('');
 
           return `<tr>${cells}${hasActions ? `<td><div class="actions">${actBtns}</div></td>` : ''}</tr>`;
         }).join('');
@@ -58,9 +61,12 @@ class DataTable extends HTMLElement {
     // Bind action buttons
     this.querySelectorAll('[data-act]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const row = JSON.parse(decodeURIComponent(btn.dataset.row));
-        const idx = parseInt(btn.dataset.act);
-        this._actions[idx]?.onClick(row);
+        const actIdx = parseInt(btn.dataset.act);
+        const rowIdx = parseInt(btn.dataset.idx);
+        const row = this._rows[rowIdx];
+        if (row) {
+          this._actions[actIdx]?.onClick(row);
+        }
       });
     });
   }
